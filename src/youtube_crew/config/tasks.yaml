@@ -1,0 +1,182 @@
+filter_comments_task:
+  description: >
+    Identifique e filtre comentários acionáveis que podem servir como ideias de vídeo.
+    O objetivo é manter apenas comentários que possam potencialmente inspirar novo conteúdo,
+    especialmente pedidos, sugestões ou perguntas diretamente relacionadas aos tópicos dos vídeos.
+    Aqui estão alguns exemplos para orientá-lo:
+
+    Input:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ],
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "this is gold, i love you maaaaan",
+        "video_id": "123",
+        "comment_id": "xyz"
+      ],
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Thank you for excellent contents! Don't stop!",
+        "video_id": "123",
+        "comment_id": "xyz"
+      ]
+    ]
+
+    Neste exemplo, apenas o primeiro comentário deve ser retornado, pois representa uma solicitação para um novo vídeo.
+    Os outros comentários são feedback positivo, mas não são acionáveis para criar novo conteúdo.
+    Além disso, filtre spam ou comentários irrelevantes.
+    Adicionalmente, certifique-se de que os comentários sejam únicos e não duplicados.
+    Por fim, certifique-se de que o comentário possa ser uma potencial ideia de vídeo.
+
+    Aqui estão os comentários que você precisa analisar:
+    {comments}
+
+  expected_output: >
+    Return an array of actionable comments, each containing:
+    - video_title
+    - comment
+    - video_id
+    - comment_id
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+  agent: comment_filter_agent
+
+generate_video_ideas_task:
+  description: >
+    Converta cada comentário acionável em uma ideia de vídeo com título e descrição estruturados.
+    Inclua também os detalhes do comentário original para referência.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows Crash Course",
+        "comment": "Can you please show how to use Flows with RAG",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+
+    A partir desta entrada, gere um título e descrição que possam guiar a criação do vídeo.
+
+  expected_output: >
+    Each actionable comment should be transformed into an object containing:
+    - video_title: A descriptive title for the video idea.
+    - description: A brief summary explaining what the video will cover.
+    - video_id: The original video_id from the input.
+    - comment_id: The original comment_id from the input.
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+  agent: video_idea_generator_agent
+
+research_video_ideas_task:
+  description: >
+    Realize pesquisas no YouTube para identificar vídeos similares com base no título de cada ideia de vídeo.
+    Para cada ideia de vídeo gerada, pesquise no YouTube e reúna detalhes sobre vídeos comparáveis,
+    incluindo o título, URL e contagem de visualizações de cada vídeo relacionado.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc"
+      ]
+    ]
+
+    Pesquise no YouTube por este título de vídeo e colete informações sobre vídeos similares.
+
+  expected_output: >
+    Enrich each video idea with a "research" field that includes an array of relevant YouTube videos
+    in the following format:
+
+    - title: Title of a similar video.
+    - url: Direct link to the similar video.
+    - view_count: View count of the similar video.
+
+    Example Output:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+  agent: research_agent
+
+score_video_ideas_task:
+  description: >
+    Atribua uma pontuação entre 1 e 10 para cada ideia de vídeo com base nos dados de pesquisa existentes.
+    Vídeos com alta contagem de visualizações nos dados de pesquisa devem receber uma pontuação mais alta, indicando
+    um forte interesse do mercado, enquanto ideias com baixa contagem de visualizações devem pontuar menos.
+
+    Input Example:
+    [
+      [
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+
+    Calcule uma pontuação com base nas métricas de contagem de visualizações e adicione-a a cada ideia de vídeo.
+
+  expected_output: >
+    Each video idea should now include:
+    - score: A value between 1 and 10 representing the potential popularity of the idea.
+
+    Example Output:
+    [
+      [
+        "score": 7,
+        "video_title": "CrewAI Flows RAG Crash Course",
+        "description": "In this tutorial, talk about how you can use RAG inside of your flows.",
+        "video_id": "123",
+        "comment_id": "abc",
+        "research": [
+          [
+            "title": "How to use RAG tools in CrewAI",
+            "url": "https://youtube.com/123",
+            "view_count": 23456
+          ]
+        ]
+      ]
+    ]
+  agent: scoring_agent
